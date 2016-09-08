@@ -76,6 +76,7 @@ import volume_kv as kv
 import vmdk_utils
 import vsan_policy
 import vsan_info
+import auth
 
 # Python version 3.5.1
 PYTHON64_VERSION = 50659824
@@ -539,8 +540,11 @@ def executeRequest(vm_uuid, vm_name, config_path, cmd, full_vol_name, opts):
 
     Returns None (if all OK) or error string
     """
-
     vm_datastore = get_datastore_name(config_path)
+    result = auth.authorize(vm_uuid, vm_datastore, cmd, opts)
+    if result:
+        return err(result)
+
     if cmd == "list":
         return listVMDK(vm_datastore)
 

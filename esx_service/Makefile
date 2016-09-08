@@ -147,15 +147,17 @@ SSH := $(DEBUG) ssh -kTax -o StrictHostKeyChecking=no
 SCP := $(DEBUG) scp -r -q -o StrictHostKeyChecking=no
 
 TMP_LOC    := $(shell echo /tmp/vmdk_ops_unittest$$RANDOM)
-TEST_FILES := $(shell find . -name '*_test.py')
+TEST_FILES := $(shell find . -name '*_test.py') 
+SCHEMA_FILES := $(shell find . -name '*.sql')
 
 test-esx:
-	@echo Copying files to $(ESX):$(TMP_LOC) and running .py unittests ...
+	@echo "Copying files to $(ESX):$(TMP_LOC) and running .py unittests ..."
 	$(SSH) root@$(ESX) 'mkdir -p $(TMP_LOC)'
+	$(SCP) $(SCHEMA_FILES) root@$(ESX):$(TMP_LOC)
 	$(SCP) $(TEST_FILES) $(TO_ESX_BIN) $(TO_ESX_PY) root@$(ESX):$(TMP_LOC)
 	$(SSH) root@$(ESX) \
 		'for i in $(TMP_LOC)/*_test.py ; \
-				do echo Running unit tests in $$i... ; python $$i ; \
+				do echo Running unit tests in $$i... ; cd $(TMP_LOC); python $$i ; \
 				status=$$((status + $$?)) ;\
 		done; \
 		exit $$status'
