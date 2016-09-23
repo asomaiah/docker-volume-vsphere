@@ -84,7 +84,7 @@ class TestAuthDataModel(unittest.TestCase):
     #     self.assertTrue(uuid.UUID(tenant1.id))
         
     #     vm_id = str(uuid.uuid4())
-    #     self.auth_mgr.add_vm_to_tenant(vm_id, 'vm1', tenant1)
+    #     tenant1.add_vm_to_tenant(self.auth_mgr.conn, vm_id, 'vm1')
     
     # def test_remove_vm_from_tenant(self):
     #     vms = [(str(uuid.uuid4()), 'vm1')]
@@ -117,7 +117,7 @@ class TestAuthDataModel(unittest.TestCase):
     #                                           default_privileges, vms, privileges)
     #     self.assertTrue(uuid.UUID(tenant3.id))
 
-    #     self.auth_mgr.remove_vm_from_tenant(vm3_id, 'vm3', tenant3)
+    #     tenant3.remove_vm_from_tenant(self.auth_mgr.conn, vm3_id, 'vm3')
     
     # def test_set_name(self):
     #     vms = [(str(uuid.uuid4()), 'vm1')]
@@ -140,7 +140,7 @@ class TestAuthDataModel(unittest.TestCase):
     #                                           default_privileges, vms, privileges)
     #     self.assertTrue(uuid.UUID(tenant1.id))
 
-    #     self.auth_mgr.set_name('new_tenant1', tenant1)
+    #     tenant1.set_name(self.auth_mgr.conn, 'new_tenant1')
 
     
     # def test_set_description(self):
@@ -163,7 +163,7 @@ class TestAuthDataModel(unittest.TestCase):
     #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
     #                                           default_privileges, vms, privileges)
     #     self.assertTrue(uuid.UUID(tenant1.id))
-    #     self.auth_mgr.set_description('new description', tenant1)
+    #     tenant1.set_description(self.auth_mgr.conn, 'new description')
     
     # def test_set_default_datastore_and_privileges(self):
     #     vms = [(str(uuid.uuid4()), 'vm1')]
@@ -194,8 +194,7 @@ class TestAuthDataModel(unittest.TestCase):
     #                           'mount_volume': 1,
     #                           'max_volume_size': 0,
     #                           'usage_quota': 0}]
-    #     self.auth_mgr.set_default_datastore_and_privileges(default_datastore, default_privileges,
-    #                                                        tenant1)                              
+    #     tenant1.set_default_datastore_and_privileges(self.auth_mgr.conn, default_datastore, default_privileges)                              
 
     
     # def test_add_datastore_access_privileges(self):
@@ -227,7 +226,7 @@ class TestAuthDataModel(unittest.TestCase):
     #                    'max_volume_size': 0,
     #                    'usage_quota': 0}]
 
-    #     self.auth_mgr.set_datastore_access_privileges(tenant1, privileges)
+    #     tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
 
     #     privileges = [{'datastore': 'datastore1',
     #                     'global_visibility': 0,
@@ -237,7 +236,7 @@ class TestAuthDataModel(unittest.TestCase):
     #                     'max_volume_size': 0,
     #                     'usage_quota': 0}]
         
-    #     self.auth_mgr.set_datastore_access_privileges(tenant1, privileges)
+    #     tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
     
 
     # def test_list_tenants(self):

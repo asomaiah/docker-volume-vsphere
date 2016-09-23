@@ -15,20 +15,123 @@ class DbConnectionError(Exception):
 
 class DockerVolumeTenant:
 
-      def __init__(self, name, description, default_datastore, default_privileges,
-                   vms, privileges, id):
-          self.name = name
-          self.description = description
-          self.default_datastore = default_datastore
-          self.default_privileges = default_privileges
-          self.vms = vms
-          self.privileges = privileges
-          if not id:
-              self.id = str(uuid.uuid4())
-          else:
-              self.id = id
+    def __init__(self, name, description, default_datastore, default_privileges,
+                    vms, privileges, id=None):
+            self.name = name
+            self.description = description
+            self.default_datastore = default_datastore
+            self.default_privileges = default_privileges
+            self.vms = vms
+            self.privileges = privileges
+            if not id:
+                self.id = str(uuid.uuid4())
+            else:
+                self.id = id
+        
+    def add_vm_to_tenant(self, conn, vm_id, vm_name):
+        tenant_id = self.id
+        conn.execute(
+                "insert into vms(vm_id, vm_name, tenant_id) values (?, ?, ?)",
+                (vm_id, vm_name, tenant_id)
+        )
+        conn.commit()
+
+    def remove_vm_from_tenant(self, conn, vm_id, vm_name):
+        tenant_id = self.id
+        conn.execute(
+                "delete from vms where vm_id=? AND tenant_id=?", 
+                (vm_id, tenant_id)
+        )
+        conn.commit()
+
+    def set_name(self, conn, name):
+        tenant_id = self.id
+        conn.execute(
+                "update tenants set name=? where id=?", 
+                (name, tenant_id)
+        )
+        conn.commit()
     
-    
+    def set_description(self, conn, description):
+        tenant_id = self.id
+        conn.execute(
+                "update tenants set description=? where id=?", 
+                (description, tenant_id)
+            )
+        conn.commit()
+        
+    def set_default_datastore_and_privileges(self, conn, datastore, privileges):
+        tenant_id = self.id
+        exist_default_datastore = self.default_datastore
+        conn.execute(
+                "update tenants set default_datastore=? where id=?", 
+                (datastore, tenant_id)
+        )
+
+        # remove the old entry
+        conn.execute(
+                "delete from privileges where tenant_id=? and datastore=?", 
+                [tenant_id, exist_default_datastore]
+        )
+
+        for p in privileges:
+            p['tenant_id'] = tenant_id
+        conn.executemany(
+            """
+            insert into privileges values
+            (:tenant_id, :datastore, :global_visibility, :create_volume,
+            :delete_volume, :mount_volume, :max_volume_size, :usage_quota)
+            """,
+            privileges
+        )
+
+        conn.commit()
+            
+    def set_datastore_access_privileges(self, conn, privileges):
+        # If we want to change privileges for <tenant1, ds1> and <tenant2, ds2>
+        # Do we call this function one time or two times?
+        tenant_id = self.id
+        for p in privileges:
+            p['tenant_id'] = tenant_id
+                            
+        conn.executemany(
+            """
+            insert or ignore into privileges values
+            (:tenant_id, :datastore, :global_visibility, :create_volume,
+            :delete_volume, :mount_volume, :max_volume_size, :usage_quota)
+            """,
+            privileges
+        )
+        
+        for p in privileges:
+            p['tenant_id'] = tenant_id
+            column_list = ['tenant_id', 'datastore', 'global_visibility', 'create_volume',
+                            'delete_volume', 'mount_volume', 'max_volume_size', 'usage_quota']
+            update_list = []
+            for col in column_list:
+                update_list.append(p[col])
+            update_list.append(tenant_id)
+            update_list.append(p['datastore'])    
+            
+            #print update_list
+
+            conn.execute(
+                """
+                update or ignore privileges set
+                tenant_id =?, 
+                datastore=?, 
+                global_visibility=?,
+                create_volume=?,
+                delete_volume=?,
+                mount_volume=?,
+                max_volume_size=?,
+                usage_quota=?
+                where tenant_id=? and datastore=?
+                """,
+                update_list
+            )
+        conn.commit()
+
 class AuthorizationDataManager:
     """
     This class abstracts the creation, modification and retrieval of
@@ -83,7 +186,7 @@ class AuthorizationDataManager:
 
         # Create the entry in the tenants table
         tenant = DockerVolumeTenant(name, description, default_datastore,
-                                    default_privileges, vms, privileges, None)
+                                    default_privileges, vms, privileges)
         id = tenant.id
         self.conn.execute(
             "insert into tenants(id, name, description, default_datastore) values (?, ?, ?, ?)",
@@ -200,113 +303,4 @@ class AuthorizationDataManager:
 
 
 
-    def add_vm_to_tenant(self, vm_id, vm_name, tenant):
-          tenant_id = tenant.id
-          self.conn.execute(
-                "insert into vms(vm_id, vm_name, tenant_id) values (?, ?, ?)",
-                (vm_id, vm_name, tenant_id)
-          )
-          self.conn.commit()
-
-    def remove_vm_from_tenant(self, vm_id, vm_name, tenant):
-        tenant_id = tenant.id
-        self.conn.execute(
-                "delete from vms where vm_id=? AND tenant_id=?", 
-                (vm_id, tenant_id)
-        )
-        self.conn.commit()
-
-    def set_name(self, name, tenant):
-        tenant_id = tenant.id
-        self.conn.execute(
-                "update tenants set name=? where id=?", 
-                (name, tenant_id)
-        )
-        self.conn.commit()
     
-    def set_description(self, description, tenant):
-        tenant_id = tenant.id
-        self.conn.execute(
-                "update tenants set name=? where id=?", 
-                (name, tenant_id)
-            )
-        self.conn.commit()
-    
-    def set_description(self, description, tenant_id):
-        self.conn.execute(
-                "update tenants set description=? where id=?", 
-                (description, tenant_id)
-        )
-        self.conn.commit()
-
-    def set_default_datastore_and_privileges(self, datastore, privileges, tenant):
-        tenant_id = tenant.id
-        exist_default_datastore = tenant.default_datastore
-        self.conn.execute(
-                "update tenants set default_datastore=? where id=?", 
-                (datastore, tenant_id)
-        )
-
-        # remove the old entry
-        self.conn.execute(
-                "delete from privileges where tenant_id=? and datastore=?", 
-                [tenant_id, exist_default_datastore]
-        )
-
-        for p in privileges:
-            p['tenant_id'] = tenant_id
-        self.conn.executemany(
-            """
-            insert into privileges values
-            (:tenant_id, :datastore, :global_visibility, :create_volume,
-             :delete_volume, :mount_volume, :max_volume_size, :usage_quota)
-            """,
-            privileges
-        )
-  
-        self.conn.commit()
-            
-    def set_datastore_access_privileges(self, tenant, privileges):
-        # If we want to change privileges for <tenant1, ds1> and <tenant2, ds2>
-        # Do we call this function one time or two times?
-        tenant_id = tenant.id
-        for p in privileges:
-            p['tenant_id'] = tenant_id
-                            
-        self.conn.executemany(
-            """
-            insert or ignore into privileges values
-            (:tenant_id, :datastore, :global_visibility, :create_volume,
-            :delete_volume, :mount_volume, :max_volume_size, :usage_quota)
-            """,
-            privileges
-        )
-        
-        for p in privileges:
-            p['tenant_id'] = tenant_id
-            column_list = ['tenant_id', 'datastore', 'global_visibility', 'create_volume',
-                            'delete_volume', 'mount_volume', 'max_volume_size', 'usage_quota']
-            update_list = []
-            for col in column_list:
-                update_list.append(p[col])
-            update_list.append(tenant_id)
-            update_list.append(p['datastore'])    
-            
-            #print update_list
-
-            self.conn.execute(
-                """
-                update or ignore privileges set
-                tenant_id =?, 
-                datastore=?, 
-                global_visibility=?,
-                create_volume=?,
-                delete_volume=?,
-                mount_volume=?,
-                max_volume_size=?,
-                usage_quota=?
-                where tenant_id=? and datastore=?
-                """,
-                update_list
-            )
-        self.conn.commit()
