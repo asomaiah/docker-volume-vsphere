@@ -1,9 +1,40 @@
 # VM based authorization for docker volumes
+# Copyright 2016 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License
+
+"""
+VM based authorization for docker volumes and tenant management.
+
+"""
 
 import sqlite3
 import uuid
 import os
+import vmdk_utils
+import vmdk_ops
+import logging
 
+def get_auth_db_path():
+    """
+    DB tables should be stored in VSAN datastore
+    DB file should be stored under /vmfs/volume/VSAN_datastore/
+    Currently, it is hardcoded
+
+    """
+    path = '/tmp/test-auth.db'
+    return path
+    
 class DbConnectionError(Exception):
     """ An exception thrown when connection to a sqlite database fails """
 
@@ -14,6 +45,15 @@ class DbConnectionError(Exception):
         return "DB connection error %s" % self.db_path
 
 class DockerVolumeTenant:
+    """
+    This class abstracts the operations to manage a DockerVolumeTenant
+    The interfaces it provides include:
+    - add VMs to tenant
+    - revmove VMs from tenant
+    - change tenant name and description
+    - set datastore and privileges for a tenant
+
+    """
 
     def __init__(self, name, description, default_datastore, default_privileges,
                     vms, privileges, id=None):
@@ -28,19 +68,22 @@ class DockerVolumeTenant:
             else:
                 self.id = id
         
-    def add_vm_to_tenant(self, conn, vm_id, vm_name):
+    def add_vms_to_tenant(self, conn, vms):
         tenant_id = self.id
-        conn.execute(
-                "insert into vms(vm_id, vm_name, tenant_id) values (?, ?, ?)",
-                (vm_id, vm_name, tenant_id)
-        )
+        vms = [(vm_id, vm_name, tenant_id) for (vm_id, vm_name) in vms]
+        if vms:
+            conn.executemany(
+              "insert into vms(vm_id, vm_name, tenant_id) values (?, ?, ?)",
+              vms
+            )
         conn.commit()
 
-    def remove_vm_from_tenant(self, conn, vm_id, vm_name):
+    def remove_vms_from_tenant(self, conn, vms):
         tenant_id = self.id
-        conn.execute(
+        vms = [(vm_id, tenant_id) for (vm_id, vm_name) in vms]
+        conn.executemany(
                 "delete from vms where vm_id=? AND tenant_id=?", 
-                (vm_id, tenant_id)
+                vms
         )
         conn.commit()
 
@@ -137,6 +180,7 @@ class AuthorizationDataManager:
     This class abstracts the creation, modification and retrieval of
     authorization data used by vmdk_ops as well as the VMODL interface for
     Docker volume management.
+
     """
 
     def __init__(self, db_path):
@@ -230,7 +274,7 @@ class AuthorizationDataManager:
     
     def list_tenants(self):
         """
-            Return a list of all tenants
+            Return a list of DockerVolumeTenants objects.
         """
         tenant_list = []
         cur = self.conn.execute(
@@ -253,7 +297,7 @@ class AuthorizationDataManager:
             )
             vms = cur.fetchall()
             
-            # search privileges for this tenant
+            # search privileges and default_privileges for this tenant
             privileges = []
             cur = self.conn.execute(
                 "select * from privileges where tenant_id=? and datastore!=?",
@@ -267,13 +311,39 @@ class AuthorizationDataManager:
                 (id,default_datastore)    
             )
             default_privileges = cur.fetchall()
-            #print "default_privileges"
-            #print default_privileges
             tenant = DockerVolumeTenant(name, description, default_datastore,
                                         default_privileges, vms, privileges, id)
             tenant_list.append(tenant)
 
         return tenant_list   
+    
+    def remove_volumes_from_volume_table(self, tenant_id):
+          
+        self.conn.execute(
+                "delete from volumes where tenant_id=?", 
+                [tenant_id]
+        )
+
+        self.conn.commit()
+    
+    def remove_volumes_for_tenant(self, tenant_id):
+        cur = self.conn.execute(
+           "select * from tenants where id=?",
+           (tenant_id,)
+        )
+        result = cur.fetchone()
+        logging.debug("remove_volumes_for_tenant: %s %s", tenant_id, result)
+        tenant_name = result[1]
+        non_tenant_mode = False
+        vmdks = vmdk_utils.get_volumes(tenant_name, non_tenant_mode)
+        # Delete all volumes for this tenant. 
+        # Do we need to remove the path /vmfs/volumes/datastore_name/tenant_name??
+        for vmdk in vmdks:
+            vmdk_path = vmdk['path']+"/"+vmdk['filename']
+            logging.debug("Deleting volume path%s", vmdk_path)
+            vmdk_ops.removeVMDK(vmdk_path)
+        
+        self.remove_volumes_from_volume_table(tenant_id)
 
     def remove_tenant(self, tenant_id, remove_volumes):
         """
@@ -283,7 +353,9 @@ class AuthorizationDataManager:
             All the volumes created by this tenant will be removed if remove_volumes
             is set to True 
         """
-      
+        if remove_volumes:
+            self.remove_volumes_for_tenant(tenant_id)
+
         self.conn.execute(
                 "delete from tenants where id=?", 
                 [tenant_id]
@@ -300,7 +372,5 @@ class AuthorizationDataManager:
         )
 
         self.conn.commit()
-
-
-
-    
+  
+   

@@ -208,7 +208,7 @@ class TestLs(unittest.TestCase):
 
     def get_testvols(self):
         return [x
-                for x in vmdk_utils.get_volumes()
+                for x in vmdk_utils.get_volumes(None, True)
                 if x['filename'].startswith('testvol')]
 
     def test_ls_helpers(self):
@@ -220,7 +220,7 @@ class TestLs(unittest.TestCase):
             self.assertNotEqual(None, metadata)
 
     def test_ls_no_args(self):
-        volumes = vmdk_utils.get_volumes()
+        volumes = vmdk_utils.get_volumes(None, True)
         header = vmdkops_admin.all_ls_headers()
         rows = vmdkops_admin.generate_ls_rows()
         expected_column_count = 11

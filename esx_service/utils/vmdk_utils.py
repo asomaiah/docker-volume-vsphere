@@ -21,6 +21,7 @@ import glob
 import re
 import logging
 import pyVim.connect
+import fnmatch
 
 # datastores should not change during 'vmdkops_admin' run,
 # so using global to avoid multiple scans of /vmfs/volumes
@@ -50,6 +51,7 @@ def get_datastores():
     """
 
     global datastores
+    logging.debug("get_datastores: %s", datastores)
     if datastores != None:
         return datastores
 
@@ -65,14 +67,27 @@ def get_datastores():
 
     return datastores
 
-def get_volumes():
+def get_volumes(tenant_re, non_tenant_mode):
     """ Return dicts of docker volumes, their datastore and their paths """
+    logging.debug("get_volumes: tenant_pattern(%s) non_tenant_mode(%d)", tenant_re, non_tenant_mode)
     volumes = []
     for (datastore, url_name, path) in get_datastores():
-        for file_name in list_vmdks(path):
-            volumes.append({'path': path,
-                            'filename': file_name,
-                            'datastore': datastore})
+        logging.debug("get_volumes: %s %s %s", datastore, url_name, path)
+        if non_tenant_mode:
+            for file_name in list_vmdks(path):
+                volumes.append({'path': path,
+                                'filename': file_name,
+                                'datastore': datastore})
+        else:
+            for root, dirs, files in os.walk(path):
+                sub_dir = root.replace(path, "")
+                sub_dir_name = sub_dir[1:]
+                if fnmatch.fnmatch(sub_dir_name, tenant_re):
+                    for file_name in list_vmdks(root):
+                        volumes.append({'path': root,
+                                        'filename': file_name,
+                                        'datastore': datastore})
+    logging.debug("volumes %s", volumes)
     return volumes
 
 
@@ -113,7 +128,7 @@ def list_vmdks(path, volname="", show_snapshots=False):
     # dockvols may not exists on a datastore - this is normal.
     if not os.path.exists(path):
         return []
-
+    logging.debug("list_vmdks: dockvol existed on datastore")
     vmdks = [f for f in os.listdir(path) if vmdk_is_a_descriptor(path, f)]
     if volname:
         vmdks = [f for f in vmdks if f.startswith(volname)]
@@ -121,7 +136,7 @@ def list_vmdks(path, volname="", show_snapshots=False):
     if not show_snapshots:
         expr =  re.compile(SNAP_VMDK_REGEXP)
         vmdks = [f for f in vmdks if not expr.match(f)]
-    
+    logging.debug("vmdks %s", vmdks)
     return vmdks
 
 

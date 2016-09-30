@@ -51,8 +51,8 @@ import vmodl.*;
    @readonly @optional VirtualMachine[] vms();
    @readonly @optional DatastoreAccessPrivileges[] privileges();
 
-   @task void addVm(VirtualMachine vm) throws AlreadyExists;
-   @task void removeVm(VirtualMachine vm) throws NotFound;
+   @task void addVms(VirtualMachine[] vm) throws AlreadyExists;
+   @task void removeVms(VirtualMachine[] vm) throws NotFound;
 
    
    @task void setDatastoreAccessPrivileges(

@@ -24,7 +24,7 @@ class TestAuthDataModel(unittest.TestCase):
     """
     Test the Authorization data model via the AuthorizationDataManager
     """
-    db_path = os.path.join('/tmp/test-auth.db')
+    db_path = os.path.join(auth_data.get_auth_db_path())
     
     def setUp(self):
         
@@ -37,253 +37,259 @@ class TestAuthDataModel(unittest.TestCase):
         self.auth_mgr.connect()
         self.auth_mgr.create_tables()
 
-   #def tearDown(self):
-       #os.unlink(self.db_path)
+   def tearDown(self):
+       os.unlink(self.db_path)
 
-    # def test_create_tenant(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = [{'datastore': 'datastore1',
-    #                  'global_visibility': 0,
-    #                   'create_volume': 0,
-    #                   'delete_volume': 0,
-    #                  'mount_volume': 0,
-    #                   'max_volume_size': 0,
-    #                   'usage_quota': 0}]
-    #     #privileges = []
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
+    def test_create_tenant(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                     'global_visibility': 0,
+                      'create_volume': 0,
+                      'delete_volume': 0,
+                     'mount_volume': 0,
+                      'max_volume_size': 0,
+                      'usage_quota': 0}]
+        #privileges = []
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
         
-    #     vms = []
-    #     privileges = []
-    #     tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant2.id))
+        vms = []
+        privileges = []
+        tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant2.id))
       
-    # def test_add_vm_to_tenant(self): 
-    #     vms = []
-    #     privileges = []
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
-        
-    #     vm_id = str(uuid.uuid4())
-    #     tenant1.add_vm_to_tenant(self.auth_mgr.conn, vm_id, 'vm1')
+    def test_add_vms_to_tenant(self): 
+        vms = []
+        privileges = []
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
+            
+        vms = [(str(uuid.uuid4()), 'vm1'), (str(uuid.uuid4()), 'vm2')]
+        tenant1.add_vms_to_tenant(self.auth_mgr.conn, vms)
     
-    # def test_remove_vm_from_tenant(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
+    def test_remove_vms_from_tenant(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
 
-    #     vms = [(str(uuid.uuid4()), 'vm2')]
-    #     tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant2.id))
+        vms = [(str(uuid.uuid4()), 'vm2')]
+        tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant2.id))
 
-    #     vm3_id = str(uuid.uuid4()) 
-    #     vms = [(vm3_id, 'vm3')]
-    #     tenant3 = self.auth_mgr.create_tenant('tenant3', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant3.id))
+        vms = [(str(uuid.uuid4()), 'vm3'), (str(uuid.uuid4()), 'vm4')]
+        tenant3 = self.auth_mgr.create_tenant('tenant3', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant3.id))
 
-    #     tenant3.remove_vm_from_tenant(self.auth_mgr.conn, vm3_id, 'vm3')
+        tenant3.remove_vms_from_tenant(self.auth_mgr.conn, vms)
     
-    # def test_set_name(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
+    def test_set_name(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
 
-    #     tenant1.set_name(self.auth_mgr.conn, 'new_tenant1')
-
-    
-    # def test_set_description(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
-    #     tenant1.set_description(self.auth_mgr.conn, 'new description')
-    
-    # def test_set_default_datastore_and_privileges(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
-
-    #     default_datastore = 'new_default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 1,
-    #                           'delete_volume': 1,
-    #                           'mount_volume': 1,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1.set_default_datastore_and_privileges(self.auth_mgr.conn, default_datastore, default_privileges)                              
+        tenant1.set_name(self.auth_mgr.conn, 'new_tenant1')
 
     
-    # def test_add_datastore_access_privileges(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = []
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
-        
-    #     vms = [(str(uuid.uuid4()), 'vm2')]
-    #     privileges = []
-    #     tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant2.id))
-        
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
+    def test_set_description(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
+        tenant1.set_description(self.auth_mgr.conn, 'new description')
+    
+    def test_set_default_datastore_and_privileges(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
 
-    #     tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
+        default_datastore = 'new_default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 1,
+                              'delete_volume': 1,
+                              'mount_volume': 1,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1.set_default_datastore_and_privileges(self.auth_mgr.conn, default_datastore, default_privileges)                              
 
-    #     privileges = [{'datastore': 'datastore1',
-    #                     'global_visibility': 0,
-    #                     'create_volume': 1,
-    #                     'delete_volume': 1,
-    #                     'mount_volume': 0,
-    #                     'max_volume_size': 0,
-    #                     'usage_quota': 0}]
+    
+    def test_add_datastore_access_privileges(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = []
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
         
-    #     tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
+        vms = [(str(uuid.uuid4()), 'vm2')]
+        privileges = []
+        tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant2.id))
+        
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
+
+        tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
+
+        privileges = [{'datastore': 'datastore1',
+                        'global_visibility': 0,
+                        'create_volume': 1,
+                        'delete_volume': 1,
+                        'mount_volume': 0,
+                        'max_volume_size': 0,
+                        'usage_quota': 0}]
+        
+        tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
     
 
-    # def test_list_tenants(self):
-    #     vms = [(str(uuid.uuid4()), 'vm1')]
-    #     privileges = []
-    #     default_datastore = 'default_ds'
-    #     default_privileges = [{'datastore': default_datastore,
-    #                           'global_visibility': 0,
-    #                           'create_volume': 0,
-    #                           'delete_volume': 0,
-    #                           'mount_volume': 0,
-    #                           'max_volume_size': 0,
-    #                           'usage_quota': 0}]
-    #     tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant1.id))
+    def test_list_tenants(self):
+        vms = [(str(uuid.uuid4()), 'vm1')]
+        privileges = []
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
         
-    #     vms = [(str(uuid.uuid4()), 'vm2'), (str(uuid.uuid4()), 'vm3')]
-    #     privileges = []
-    #     tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
-    #                                           default_privileges, vms, privileges)
-    #     self.assertTrue(uuid.UUID(tenant2.id))
+        vms = [(str(uuid.uuid4()), 'vm2'), (str(uuid.uuid4()), 'vm3')]
+        privileges = []
+        tenant2 = self.auth_mgr.create_tenant('tenant2', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant2.id))
         
-    #     privileges = [{'datastore': 'datastore1',
-    #                    'global_visibility': 0,
-    #                    'create_volume': 0,
-    #                    'delete_volume': 0,
-    #                    'mount_volume': 0,
-    #                    'max_volume_size': 0,
-    #                    'usage_quota': 0}]
+        privileges = [{'datastore': 'datastore1',
+                       'global_visibility': 0,
+                       'create_volume': 0,
+                       'delete_volume': 0,
+                       'mount_volume': 0,
+                       'max_volume_size': 0,
+                       'usage_quota': 0}]
 
-    #     self.auth_mgr.set_datastore_access_privileges(tenant1, privileges)
-    #     tenants_list = self.auth_mgr.list_tenants()
-    #     for tenant in tenants_list:
-    #         print "Tenant Info Start"
-    #         print tenant.name
-    #         print tenant.description
-    #         print tenant.default_datastore
-    #         print tenant.default_privileges
-    #         print tenant.vms
-    #         print tenant.privileges
-    #         print "Tenant Info End"
+        tenant1.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
+        tenants_list = self.auth_mgr.list_tenants()
+        for tenant in tenants_list:
+            print "Tenant Info Start"
+            print tenant.name
+            print tenant.description
+            print tenant.default_datastore
+            print tenant.default_privileges
+            print tenant.vms
+            print tenant.privileges
+            print "Tenant Info End"
             
     
     def test_remove_tenants(self):
-        vms = [(str(uuid.uuid4()), 'vm1')]
-        privileges = []
+        #vms = [(str(uuid.uuid4()), 'vm1')]
+        vms = [('564df562-3d58-c99a-e76e-e8792b77ca2d', 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                              'global_visibility': 0,
+                              'create_volume': 1,
+                              'delete_volume': 1,
+                              'mount_volume': 1,
+                              'max_volume_size': 500,
+                              'usage_quota': 1000}]
         default_datastore = 'default_ds'
         default_privileges = [{'datastore': default_datastore,
                               'global_visibility': 0,
@@ -317,8 +323,36 @@ class TestAuthDataModel(unittest.TestCase):
                        'max_volume_size': 0,
                        'usage_quota': 0}]
 
-        self.auth_mgr.set_datastore_access_privileges(tenant2, privileges)
+        tenant2.set_datastore_access_privileges(self.auth_mgr.conn, privileges)
         self.auth_mgr.remove_tenant(tenant2.id, False)
+
+    """
+        This test function is used to temporaryly for debug, and will be REMOVED
+        later!!!
+    """
+    def test_util(self):
+        #vms = [(str(uuid.uuid4()), 'vm1')]
+        vms = [('564df562-3d58-c99a-e76e-e8792b77ca2d', 'vm1')]
+        privileges = [{'datastore': 'datastore1',
+                              'global_visibility': 0,
+                              'create_volume': 1,
+                              'delete_volume': 1,
+                              'mount_volume': 1,
+                              'max_volume_size': 500,
+                              'usage_quota': 1000}]
+        default_datastore = 'default_ds'
+        default_privileges = [{'datastore': default_datastore,
+                              'global_visibility': 0,
+                              'create_volume': 0,
+                              'delete_volume': 0,
+                              'mount_volume': 0,
+                              'max_volume_size': 0,
+                              'usage_quota': 0}]
+        tenant1 = self.auth_mgr.create_tenant('tenant1', 'Some tenant', default_datastore,
+                                              default_privileges, vms, privileges)
+        self.assertTrue(uuid.UUID(tenant1.id))
+                
+        #self.auth_mgr.remove_tenant(tenant1.id, True)
 
 if __name__ == "__main__":
     unittest.main()

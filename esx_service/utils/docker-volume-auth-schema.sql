@@ -26,3 +26,12 @@ CREATE TABLE privileges (
   PRIMARY KEY (tenant_id, datastore),
   FOREIGN KEY(tenant_id) REFERENCES tenants(id)
 );
+
+CREATE TABLE volumes (
+  tenant_id TEXT NOT NULL,
+  datastore TEXT NOT NULL,
+  volume_name TEXT,
+  volume_size INTEGER,
+  PRIMARY KEY(tenant_id, datastore, volume_name),
+  FOREIGN KEY(tenant_id) REFERENCES tenants(id)
+);
