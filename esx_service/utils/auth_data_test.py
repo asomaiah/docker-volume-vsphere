@@ -37,8 +37,8 @@ class TestAuthDataModel(unittest.TestCase):
         self.auth_mgr.connect()
         self.auth_mgr.create_tables()
 
-   def tearDown(self):
-       os.unlink(self.db_path)
+    def tearDown(self):
+        os.unlink(self.db_path)
 
     def test_create_tenant(self):
         vms = [(str(uuid.uuid4()), 'vm1')]

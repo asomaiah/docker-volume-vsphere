@@ -603,7 +603,6 @@ def connectLocal():
 	connect and do stuff on local machine
 	'''
     global si  #
-
     # Connect to localhost as dcui
     # User "dcui" is a local Admin that does not lose permissions
     # when the host is in lockdown mode.
@@ -616,10 +615,13 @@ def connectLocal():
     # set out ID in context to be used in request - so we'll see it in logs
     reqCtx = VmomiSupport.GetRequestContext()
     reqCtx["realUser"] = 'dvolplug'
+    logging.debug("Connect to localhost si:%s", si)
     return si
 
 def get_datastore_url(datastore):
-    si = pyVim.connect.Connect()
+    global si
+    if not si:
+        connectLocal()
     [d.info.url for d in si.content.rootFolder.childEntity[0].datastore if d.info.name == datastore]
     return d.info.url
 

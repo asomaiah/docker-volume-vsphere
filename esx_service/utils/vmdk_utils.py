@@ -54,8 +54,13 @@ def get_datastores():
     logging.debug("get_datastores: %s", datastores)
     if datastores != None:
         return datastores
-
+    
     si = pyVim.connect.Connect()
+    if not si:
+        logging.warning("Failed to connect to localhost, and cannot find datastores")
+        return datastores
+    
+    logging.debug("Connect to localhost si %s", si)
     #  We are connected to ESX so childEntity[0] is current DC/Host
     ds_objects = \
       si.content.rootFolder.childEntity[0].datastoreFolder.childEntity
@@ -64,6 +69,7 @@ def get_datastores():
                    os.path.join(d.info.url, 'dockvols'))
                   for d in ds_objects]
     pyVim.connect.Disconnect(si)
+    logging.debug("Disconnect from localhost si %s", si)
 
     return datastores
 

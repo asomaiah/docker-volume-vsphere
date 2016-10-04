@@ -269,7 +269,7 @@ class TestSet(unittest.TestCase):
 
     def get_testvols(self):
         return [x
-                for x in vmdk_utils.get_volumes()
+                for x in vmdk_utils.get_volumes(None, True)
                 if x['filename'].startswith('testvol')]
 
     def test_set_attach_as(self):
