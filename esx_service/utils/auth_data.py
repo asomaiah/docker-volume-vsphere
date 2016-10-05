@@ -25,16 +25,7 @@ import vmdk_utils
 import vmdk_ops
 import logging
 
-def get_auth_db_path():
-    """
-    DB tables should be stored in VSAN datastore
-    DB file should be stored under /vmfs/volume/VSAN_datastore/
-    Currently, it is hardcoded
-
-    """
-    path = '/tmp/test-auth.db'
-    return path
-    
+ 
 class DbConnectionError(Exception):
     """ An exception thrown when connection to a sqlite database fails """
 
@@ -183,13 +174,26 @@ class AuthorizationDataManager:
 
     """
 
-    def __init__(self, db_path):
-        self.db_path = db_path
+    def __init__(self, db_path=None):
+        if not db_path:
+            self.db_path = self.get_auth_db_path()
+        else:
+            self.db_path = db_path
         self.conn = None
 
     def __del__(self):
         if self.conn:
             self.conn.close()
+    
+    def get_auth_db_path(self):
+        """
+        DB tables should be stored in VSAN datastore
+        DB file should be stored under /vmfs/volume/VSAN_datastore/
+        Currently, it is hardcoded
+
+        """
+        path = '/tmp/test-auth.db'
+        return path
 
     def connect(self):
         """
@@ -284,10 +288,10 @@ class AuthorizationDataManager:
        
         for r in result:
             # loop through each tenant
-            id = r[0]
-            name = r[1]
-            description = r[2]
-            default_datastore = r[3]
+            id = r['id']
+            name = r['name']
+            description = r['description']
+            default_datastore = r['default_datastore']
             
             # search vms for this tenant
             vms = []
@@ -333,15 +337,16 @@ class AuthorizationDataManager:
         )
         result = cur.fetchone()
         logging.debug("remove_volumes_for_tenant: %s %s", tenant_id, result)
-        tenant_name = result[1]
-        non_tenant_mode = False
-        vmdks = vmdk_utils.get_volumes(tenant_name, non_tenant_mode)
+        tenant_name = result['name']
+        vmdks = vmdk_utils.get_volumes(tenant_name)
         # Delete all volumes for this tenant. 
         # Do we need to remove the path /vmfs/volumes/datastore_name/tenant_name??
         for vmdk in vmdks:
             vmdk_path = vmdk['path']+"/"+vmdk['filename']
             logging.debug("Deleting volume path%s", vmdk_path)
-            vmdk_ops.removeVMDK(vmdk_path)
+            err = vmdk_ops.removeVMDK(vmdk_path)
+            if err:
+                logging.error("remove vmdk %s failed with error %s", vmdk_path, err)
         
         self.remove_volumes_from_volume_table(tenant_id)
 

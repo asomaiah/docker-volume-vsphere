@@ -73,13 +73,13 @@ def get_datastores():
 
     return datastores
 
-def get_volumes(tenant_re, non_tenant_mode):
+def get_volumes(tenant_re):
     """ Return dicts of docker volumes, their datastore and their paths """
-    logging.debug("get_volumes: tenant_pattern(%s) non_tenant_mode(%d)", tenant_re, non_tenant_mode)
+    logging.debug("get_volumes: tenant_pattern(%s)", tenant_re)
     volumes = []
     for (datastore, url_name, path) in get_datastores():
         logging.debug("get_volumes: %s %s %s", datastore, url_name, path)
-        if non_tenant_mode:
+        if not tenant_re:
             for file_name in list_vmdks(path):
                 volumes.append({'path': path,
                                 'filename': file_name,

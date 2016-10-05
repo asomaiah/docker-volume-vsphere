@@ -399,7 +399,7 @@ class VmdkAttachDetachTestCase(unittest.TestCase):
 
     def get_testvols(self):
         return [x
-                for x in vmdk_utils.get_volumes(None, True)
+                for x in vmdk_utils.get_volumes(None)
                 if x['filename'].startswith('VmdkAttachDetachTestVol')]
 
     

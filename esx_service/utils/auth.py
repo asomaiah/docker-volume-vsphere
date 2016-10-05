@@ -7,8 +7,7 @@ auth_mgr = None
 def connect_auth_db():
     global auth_mgr
     if not auth_mgr:
-        db_path = os.path.join(auth_data.get_auth_db_path())
-        auth_mgr = auth_data.AuthorizationDataManager(db_path)
+        auth_mgr = auth_data.AuthorizationDataManager()
         auth_mgr.connect()
        
 def find_tenant_by_vm(vm_uuid):
@@ -24,14 +23,14 @@ def find_tenant_by_vm(vm_uuid):
     tenant_name = None
     result = cur.fetchone()
     if result:
-        tenant_uuid = result[2]
+        tenant_uuid = result['tenant_id']
         cur = auth_mgr.conn.execute(
                 "select * from tenants where id=?",
                 (tenant_uuid,)
         )
         result = cur.fetchone()
         if result:
-            tenant_name = result[1]
+            tenant_name = result['name']
             logging.debug("Found tenant_uuid %s, tenant_name", tenant_uuid, tenant_name)
 
     return tenant_uuid, tenant_name
@@ -81,21 +80,21 @@ def has_delete_privilege(privileges):
 def convert_to_MB(vol_size_str):
     unit = vol_size_str[-2:]
     value = int(vol_size_str[:-2])
-    convertions = {'MB' : 1,
+    conversions = {'MB' : 1,
                    'GB' : 1024,
                    'TB' : 1024*1024,
                    'PB' : 1024*1024*1024,
     }
     
-    if unit.upper() in convertions.keys():
-        value = value*convertions[unit]
+    if unit.upper() in conversions.keys():
+        value = value*conversions[unit]
     else:
         logging.error("Invalid volume size")
     return value  
 
 def get_vol_size(opts):
     if not opts:
-        logging.error("Volume size does not specified")
+        logging.error("Volume size not specified")
     return opts['size']    
 
 """
@@ -119,8 +118,7 @@ def get_total_storage_used(tenant_uuid, datastore):
     )
     volumes = cur.fetchall()
     for volume in volumes:
-        # volume[3] is the volume_size filed in the volume table
-        total_storage_used = total_storage_used+volume[3]
+        total_storage_used = total_storage_used+volume['volume_size']
 
     logging.debug("taotal storage used for (tenant %s datastore %s) is %s MB", tenant_uuid, 
                   datastore, total_storage_used)         
@@ -170,6 +168,35 @@ def check_privileges_for_command(cmd, opts, tenant_uuid, datastore, privileges):
     tenant_name: If the VM belongs to a tenant, return tenant_name, otherwise, return 
     None  
 """
+def tables_exist():
+    global auth_mgr
+
+    cur = auth_mgr.conn.execute("select name from sqlite_master where type='table' and name='tenants';")
+    result = cur.fetchall()
+    if not result:
+        logging.debug("table tenants does not exist")
+        return False
+    
+    cur = auth_mgr.conn.execute("select name from sqlite_master where type='table' and name='vms';")
+    result = cur.fetchall()
+    if not result:
+        logging.debug("table vms does not exist")
+        return False
+
+    cur = auth_mgr.conn.execute("select name from sqlite_master where type='table' and name='privileges';")
+    result = cur.fetchall()
+    if not result:
+        logging.debug("table privileges does not exist")
+        return False
+    
+    cur = auth_mgr.conn.execute("select name from sqlite_master where type='table' and name='volumes';")
+    result = cur.fetchall()
+    if not result:
+        logging.debug("table volumes does not exist")
+        return False
+    
+    return True
+
 def authorize(vm_uuid, datastore, cmd, opts):
    #return random.choice([None, 'Some error msg'])
    logging.debug("Authorize: vm_uuid=%s", vm_uuid)
@@ -178,9 +205,17 @@ def authorize(vm_uuid, datastore, cmd, opts):
    logging.debug("Authorize: opt=%s", opts)
 
    connect_auth_db()
+
+   # If table "tenants", "vms", "privileges" or "volumes" does not exist
+   # don't need auth check
+   if not tables_exist():
+       logging.debug("Required tables in auth db do not exist")
+       return None, None, None
+
    tenant_uuid, tenant_name = find_tenant_by_vm(vm_uuid)
    if not tenant_uuid:
        # This VM does not associate any tenant, don't need auth check
+       logging.debug("VM %s does not belong to any tenant", vm_uuid)
        return None, None, None
    else:
        privileges = find_privileges_by_tenant_and_datastore(tenant_uuid, datastore)

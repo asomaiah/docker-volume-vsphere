@@ -407,10 +407,7 @@ def listVMDK(vm_datastore, tenant):
     Each volume name is returned as either `volume@datastore`, or just `volume`
     for volumes on vm_datastore
     """
-    non_tenant_mode = False
-    if not tenant:
-        non_tenant_mode = True
-    vmdks = vmdk_utils.get_volumes(tenant, non_tenant_mode)
+    vmdks = vmdk_utils.get_volumes(tenant)
     # build  fully qualified vol name for each volume found
     return [{u'Name': get_full_vol_name(x['filename'], x['datastore'], vm_datastore),
              u'Attributes': {}} \
