@@ -30,7 +30,7 @@ import os.path
 # since we rely on it to locate log file name after config is loaded.
 LOG_CONFIG_FILE = "/etc/vmware/vmdkops/log_config.json"
 
-LOG_LEVEL_DEFAULT = 'INFO'
+LOG_LEVEL_DEFAULT = 'DEBUG'
 
 # Defaults for log files - used to generate conf file if it is missing
 # Note: log file location should be synced with CI and 'make'
@@ -62,7 +62,7 @@ LOG_CONFIG_DEFAULT = {
             "class": "logging.handlers.RotatingFileHandler",
             "filename": LOG_FILE,
             "formatter": "standard",
-            "level": "INFO",
+            "level": "DEBUG",
             "maxBytes": LOG_MAX_BYTES,
             "backupCount": LOG_MAX_BACKUPS,
             "encoding": "utf8",
@@ -71,7 +71,7 @@ LOG_CONFIG_DEFAULT = {
     "loggers": {
         "": {
             "handlers": ["rotate_file"],
-            "level": "INFO",
+            "level": "DEBUG",
         },
     }
 }
