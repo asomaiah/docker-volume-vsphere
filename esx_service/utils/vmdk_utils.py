@@ -112,11 +112,13 @@ def get_vmdk_path(path, vol_name):
     # see vmdk_ops.py:parse_vol_name() which enforces the volume name rules.
     delta_disks = glob.glob("{0}/{1}{2}".format(path, vol_name, SNAP_SUFFIX_GLOB))
     if not delta_disks:
+        print ("No delta_disks")
         return os.path.join(path, "{0}.vmdk".format(vol_name))
 
     # this funky code gets the name of the latest delta disk:
     latest = sorted([(vmdk, os.stat(vmdk).st_ctime) for vmdk in delta_disks], key=lambda d: d[1], reverse=True)[0][0]
     logging.debug("The latest delta disk is %s. All delta disks: %s", latest, delta_disks)
+    print ("latest delta_disk=%s", latest)
     return latest
 
 

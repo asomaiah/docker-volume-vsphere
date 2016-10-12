@@ -77,6 +77,8 @@ import vmdk_utils
 import vsan_policy
 import vsan_info
 import auth
+import sqlite3
+import convert
 
 # Python version 3.5.1
 PYTHON64_VERSION = 50659824
@@ -582,7 +584,7 @@ def executeRequest(vm_uuid, vm_name, config_path, cmd, full_vol_name, opts):
         # create succeed, insert infomation of this volume to volumes table
         if not response:
             if tenant_uuid:
-                vol_size_in_MB = auth.convert_to_MB(auth.get_vol_size(opts))
+                vol_size_in_MB = convert.convert_to_MB(auth.get_vol_size(opts))
                 auth.add_volume_to_volumes_table(tenant_uuid, datastore, vol_name, vol_size_in_MB) 
     elif cmd == "remove":
         response = removeVMDK(vmdk_path)
@@ -643,8 +645,8 @@ def findDeviceByPath(vmdk_path, vm):
         datastore_prefix = get_datastore_url(datastore)+'/'
         real_vol_dir = os.path.realpath(dvol_dir).replace(datastore_prefix, "")
         virtual_disk = os.path.join(real_vol_dir, os.path.basename(vmdk_path))
-        logging.debug("backing_disk %s", backing_disk)
-        logging.debug("virtual_disk %s", virtual_disk)
+        logging.debug("dvol_dir=%s datastore_prefix=%s real_vol_dir=%s", dvol_dir, datastore_prefix,real_vol_dir)
+        logging.debug("backing_disk=%s virtual_disk=%s", backing_disk, virtual_disk)
         if virtual_disk == backing_disk:
             logging.debug("findDeviceByPath: MATCH: %s", backing_disk)
             return d

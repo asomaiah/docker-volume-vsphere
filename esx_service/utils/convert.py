@@ -12,23 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-##
-## Implements the interface for side car based implementation
-## of a KV store for vmdks.
-##
-
-import auth
-import unittest
-import uuid
-
-class AuthTest(unittest.TestCase):
-    """ Test authorization """
-
-    # def test_authorize_create(self):
-    #     result = auth.authorize(vm_id, 'datastore1', 'create', {})
-    #     if result:
-    #         self.assertIsNotNone(result)
 
 
-if __name__ == '__main__':
-    unittest.main()
+def convert_to_MB(vol_size_str):
+    """ For a given size string, return values in MB.
+
+        Example:
+        '100MB': return 100
+        '100GB': return 100*1024
+        
+    """
+
+    unit = vol_size_str[-2:]
+    value = int(vol_size_str[:-2])
+    conversions = {'MB' : 1,
+                   'GB' : 1024,
+                   'TB' : 1024*1024,
+                   'PB' : 1024*1024*1024,
+    }
+    
+    if unit.upper() in conversions.keys():
+        value = value*conversions[unit]
+    else:
+        logging.error("Invalid volume size")
+    return value  
