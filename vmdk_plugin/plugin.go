@@ -84,14 +84,18 @@ func getMountPoint(volName string) string {
 
 // Get info about a single volume
 func (d *vmdkDriver) Get(r volume.Request) volume.Response {
+	log.Debug("calling GET ")
 	status, err := d.ops.Get(r.Name)
+	log.Debug("returned GET ")
 	if err != nil {
 		return volume.Response{Err: err.Error()}
 	}
 	mountpoint := getMountPoint(r.Name)
-	return volume.Response{Volume: &volume.Volume{Name: r.Name,
+	response := volume.Response{Volume: &volume.Volume{Name: r.Name,
 		Mountpoint: mountpoint,
 		Status:     status}}
+	log.Debug("got response", response)
+	return response
 }
 
 // List volumes known to the driver
@@ -361,6 +365,14 @@ func (d *vmdkDriver) Mount(r volume.MountRequest) volume.Response {
 		isReadOnly = true
 	}
 
+	_, exists := status["fstype"]
+
+	if !exists {
+		log.WithFields(
+			log.Fields{"name": r.Name, "error": "Invalid filesystem type."},
+		).Error("Failed to mount ")
+		return volume.Response{Err: "Failed mount - invalid filesystem type."}
+	}
 	mountpoint, err := d.mountVolume(r.Name, status["fstype"].(string), isReadOnly)
 	if err != nil {
 		log.WithFields(
