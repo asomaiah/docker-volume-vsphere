@@ -593,9 +593,8 @@ def executeRequest(vm_uuid, vm_name, config_path, cmd, full_vol_name, opts):
                 vol_size_in_MB = convert.convert_to_MB(auth.get_vol_size(opts))
                 auth.add_volume_to_volumes_table(tenant_uuid, datastore, vol_name, vol_size_in_MB)
             else:
-                logging.error(" VM %s does not belong to any tenant", vm_name)
-                return err("VM {0} does not belong to any tenant".format(vm_name))
-                      
+                logging.warning(" VM %s does not belong to any tenant", vm_name)
+                                      
     elif cmd == "remove":
         response = removeVMDK(vmdk_path)
     elif cmd == "attach":
